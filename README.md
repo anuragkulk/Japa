@@ -1,3 +1,27 @@
+# 🪔 Japa
+
+**Japa** is a simple family devotional app designed to help individuals and families record their Japa practice, preserve devotional content, and track meaningful milestones.
+
+The app focuses on keeping spiritual practice organized without unnecessary complexity.
+
+## ✨ What Japa Does
+
+- 🧘 **Record Japa** — Manually record Japa completed by each person on a specific date.
+- 👨‍👩‍👧‍👦 **Family Members** — Maintain separate Japa records for family members, with a personal **You** profile included by default.
+- 📖 **Devotional Library** — Store prayers, mantras, stotras, shlokas, songs, and other devotional content as images.
+- ✍️ **Typed Devotionals** — Write or paste devotional text in any language or script.
+- 🎯 **Japa Milestones** — Track progress toward predefined milestones such as 1 Lakh, 1 Crore, 8 Crore, and 10 Crore, or create custom milestones.
+- 🔒 **Simple & Focused** — No unnecessary social features, gamification, automated counters, or distracting analytics.
+
+## 🎯 Philosophy
+
+Japa is built around one simple idea:
+
+> **Keep the practice simple. Preserve what matters.**
+
+The goal is not to gamify devotion, but to provide a calm and practical place for families to record their practice and preserve the devotional material that is meaningful to them.
+
+
 # Qoder Sites React starter
 
 A React, TypeScript, Vite and Tailwind frontend with a bundled Shadcn component catalog. Vite produces static files in `dist/`. Server behavior belongs in the optional Qoder Sites Function, not a Node or framework server.
