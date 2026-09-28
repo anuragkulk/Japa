@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.tsbuildinfo
+.qoder-sites/
+.qoder-sites.json
+
+# Android release signing material — never commit credentials or keys
+*.keystore
+*.jks
+keystore.properties
+android/keystore.properties
+
+# Android local build/SDK artifacts
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/

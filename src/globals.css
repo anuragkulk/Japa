@@ -1,0 +1,158 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../vendor/shadcn-tailwind-4.13.0.css";
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
+/* Japa — warm ivory / earthy brown / muted saffron / sandalwood / subtle gold.
+   A single calm light theme; no dark mode. */
+:root {
+  --background: #f6efe3;
+  --foreground: #3b2c1e;
+  --card: #fffbf4;
+  --card-foreground: #3b2c1e;
+  --popover: #fffbf4;
+  --popover-foreground: #3b2c1e;
+  --primary: #b9762e;
+  --primary-foreground: #fff8ee;
+  --secondary: #ecdfca;
+  --secondary-foreground: #4a3826;
+  --muted: #efe5d5;
+  --muted-foreground: #8a7559;
+  --accent: #c9a227;
+  --accent-foreground: #3b2c1e;
+  --destructive: #a8452c;
+  --destructive-foreground: #fff8ee;
+  --border: #e3d5bf;
+  --input: #e3d5bf;
+  --ring: #b9762e;
+  --gold: #c9a227;
+  --saffron: #d98e3f;
+  --sandalwood: #d8b98c;
+  --chart-1: #b9762e;
+  --chart-2: #c9a227;
+  --chart-3: #8a7559;
+  --chart-4: #d98e3f;
+  --chart-5: #a8452c;
+  --radius: 0.9rem;
+  --sidebar: #f6efe3;
+  --sidebar-foreground: #3b2c1e;
+  --sidebar-primary: #b9762e;
+  --sidebar-primary-foreground: #fff8ee;
+  --sidebar-accent: #ecdfca;
+  --sidebar-accent-foreground: #4a3826;
+  --sidebar-border: #e3d5bf;
+  --sidebar-ring: #b9762e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-saffron: var(--saffron);
+  --color-sandalwood: var(--sandalwood);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+/* Japa count number: an elegant, highly legible serif that is bundled with the
+   OS (Android Noto Serif, desktop Georgia/Times) so it renders offline with no
+   web-font fetch. Lining + tabular figures keep 0,1,2,5,6,8,9 distinct and
+   columns aligned. Deliberately not decorative. */
+@utility font-count {
+  font-family: ui-serif, Georgia, "Times New Roman", "Noto Serif", "PT Serif",
+    serif;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: 0.005em;
+}
+
+/* Soft, subtle elevation used across cards and bars. */
+@utility shadow-soft {
+  box-shadow: 0 1px 2px rgba(59, 44, 30, 0.04),
+    0 8px 24px -12px rgba(59, 44, 30, 0.18);
+}
+
+@utility shadow-lift {
+  box-shadow: 0 2px 6px rgba(59, 44, 30, 0.06),
+    0 18px 40px -18px rgba(59, 44, 30, 0.28);
+}
+
+/* Thin gold hairline used beneath headers and between sections. */
+@utility hairline-gold {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--gold) 55%, transparent),
+    transparent
+  );
+}
