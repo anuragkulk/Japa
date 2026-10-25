@@ -8,7 +8,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // keeps the WebView origin identical to a normal browser session, so every
 // existing feature works unchanged with no backend modification.
 const config: CapacitorConfig = {
-  appId: "com.japa.app",
+  appId: "appId: 'com.anuragkulkarni.japa',",
   appName: "Japa",
   webDir: "dist",
   server: {

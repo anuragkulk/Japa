@@ -169,3 +169,27 @@ export function SectionLabel({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+const FOOTER_LINKS = [
+  { href: "/privacy-policy", text: "Privacy Policy" },
+  { href: "/delete-data", text: "Delete My Data" },
+  { href: "/delete-account", text: "Delete Account" },
+];
+
+export function SiteFooter() {
+  return (
+    <footer className="mt-8 w-full pt-4 text-center text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        {FOOTER_LINKS.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="font-medium text-foreground/70 underline-offset-4 transition-colors hover:text-primary hover:underline"
+          >
+            {link.text}
+          </a>
+        ))}
+      </div>
+    </footer>
+  );
+}

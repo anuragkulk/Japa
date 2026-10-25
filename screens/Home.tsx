@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Flower2, LogOut, Plus, Loader2 } from "lucide-react";
-import { AppBar, Screen, PageBody, SectionLabel, EmptyState } from "@/components/shell";
+import { AppBar, Screen, PageBody, SectionLabel, EmptyState, SiteFooter } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { navigate } from "@/lib/router";
@@ -110,6 +110,8 @@ export function Home() {
         >
           <Plus className="size-4" /> Add Japa
         </Button>
+
+        <SiteFooter />
       </PageBody>
     </Screen>
   );

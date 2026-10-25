@@ -241,6 +241,138 @@ async function handleLogout(supabase, request) {
   return json({ ok: true });
 }
 
+/* ------------------------------ deletion -------------------------------- */
+
+// Both deletion actions re-check the account email and the current password, so
+// a leaked session token cannot erase an account on its own.
+async function verifyOwnership(supabase, userId, body) {
+  const email = normalizeEmail(body.email);
+  if (!email || typeof body.password !== "string") throw new HttpError(400, "invalid_input");
+  if (body.confirm !== true) throw new HttpError(400, "confirmation_required");
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("id,email,password_hash,salt")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw new HttpError(503, "service_unavailable");
+  if (!user) throw new HttpError(401, "login_required");
+  if (user.email !== email) throw new HttpError(403, "email_mismatch");
+  const hash = await hashPassword(body.password, user.salt);
+  if (!safeEqual(hash, user.password_hash)) throw new HttpError(400, "invalid_credentials");
+}
+
+async function removeFiles(storage, paths, failed) {
+  for (let i = 0; i < paths.length; i += 500) {
+    const chunk = paths.slice(i, i + 500);
+    try {
+      await storage.remove(chunk);
+    } catch {
+      failed.push(...chunk);
+    }
+  }
+}
+
+// Removes every row and stored file owned by userId. Counts are read first and
+// each step records its own error, so the response can state what actually
+// happened instead of assuming the deletes succeeded.
+async function removeOwnedData(supabase, storage, userId) {
+  const deleted = { people: 0, japaRecords: 0, milestones: 0, devotionals: 0, images: 0, texts: 0 };
+  const failedTables = [];
+  const failedFiles = [];
+
+  const { data: personRows, error: personErr } = await supabase
+    .from("people")
+    .select("id,photo_path")
+    .eq("owner_id", userId);
+  if (personErr) failedTables.push("people");
+  else {
+    deleted.people = (personRows ?? []).length;
+    await removeFiles(storage, (personRows ?? []).map((r) => r.photo_path).filter(Boolean), failedFiles);
+  }
+
+  const { data: recordRows, error: recordErr } = await supabase
+    .from("japa_records")
+    .select("id")
+    .eq("owner_id", userId);
+  if (recordErr) failedTables.push("japa_records");
+  else deleted.japaRecords = (recordRows ?? []).length;
+
+  const { data: imageRows, error: imageErr } = await supabase
+    .from("devotional_images")
+    .select("id,image_path")
+    .eq("owner_id", userId);
+  if (imageErr) failedTables.push("devotional_images");
+  else {
+    deleted.images = (imageRows ?? []).length;
+    await removeFiles(storage, (imageRows ?? []).map((r) => r.image_path).filter(Boolean), failedFiles);
+  }
+
+  const { data: textRows, error: textErr } = await supabase
+    .from("devotional_texts")
+    .select("id")
+    .eq("owner_id", userId);
+  if (textErr) failedTables.push("devotional_texts");
+  else deleted.texts = (textRows ?? []).length;
+
+  const { data: devotionalRows, error: devotionalErr } = await supabase
+    .from("devotionals")
+    .select("id")
+    .eq("owner_id", userId);
+  if (devotionalErr) failedTables.push("devotionals");
+  else deleted.devotionals = (devotionalRows ?? []).length;
+
+  const { data: milestoneRows, error: milestoneErr } = await supabase
+    .from("milestones")
+    .select("id")
+    .eq("owner_id", userId);
+  if (milestoneErr) failedTables.push("milestones");
+  else deleted.milestones = (milestoneRows ?? []).length;
+
+  const order = ["japa_records", "milestones", "devotional_images", "devotional_texts", "devotionals", "people"];
+  for (const table of order) {
+    if (failedTables.includes(table)) continue;
+    const { error } = await supabase.from(table).delete().eq("owner_id", userId);
+    if (error) failedTables.push(table);
+  }
+
+  return { deleted, failedTables, failedFiles: failedFiles.length };
+}
+
+function deletionStatus({ failedTables, failedFiles }) {
+  if (failedTables.length > 0) return "failed";
+  return failedFiles > 0 ? "pending_files" : "deleted";
+}
+
+async function handleDeleteData(supabase, storage, request, userId) {
+  if (request.method !== "POST") throw new HttpError(405, "method_not_allowed");
+  const body = await readJson(request);
+  await verifyOwnership(supabase, userId, body);
+  const result = await removeOwnedData(supabase, storage, userId);
+  return json({ status: deletionStatus(result), account: "retained", ...result });
+}
+
+async function handleDeleteAccount(supabase, storage, request, userId) {
+  if (request.method !== "POST") throw new HttpError(405, "method_not_allowed");
+  const body = await readJson(request);
+  await verifyOwnership(supabase, userId, body);
+  const result = await removeOwnedData(supabase, storage, userId);
+
+  // Credentials go last, and only once the owned data is clear: a partial run
+  // leaves the account signable-in so the user can retry the deletion rather
+  // than being locked out of data they asked to remove.
+  let account = "retained";
+  if (result.failedTables.length === 0) {
+    const { error: sErr } = await supabase.from("sessions").delete().eq("user_id", userId);
+    if (sErr) result.failedTables.push("sessions");
+    else {
+      const { error: uErr } = await supabase.from("users").delete().eq("id", userId);
+      if (uErr) result.failedTables.push("users");
+      else account = "deleted";
+    }
+  }
+  return json({ status: deletionStatus(result), account, ...result });
+}
+
 async function handleMe(supabase, request) {
   if (request.method !== "GET") throw new HttpError(405, "method_not_allowed");
   const { userId, user } = await requireSession(supabase, request);
@@ -1166,6 +1298,10 @@ export async function handleApp({ request, supabase, storage }) {
         return await handleLogout(supabase, request);
       case "me":
         return await handleMe(supabase, request);
+      case "delete_data":
+        return await handleDeleteData(supabase, storage, request, userId);
+      case "delete_account":
+        return await handleDeleteAccount(supabase, storage, request, userId);
       case "people":
         return await handlePeople(supabase, storage, request, userId);
       case "person_photo_intent":

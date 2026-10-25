@@ -2,9 +2,16 @@ import { useCallback, useSyncExternalStore } from "react";
 
 // Minimal hash router: gives correct browser back/forward and deep links on
 // static hosting without a server rewrite.
+// Routes that must also answer to a real URL path (/privacy-policy), not only a
+// hash. Static SPA fallback serves index.html there, so the pathname is read
+// whenever the hash carries no route.
+const PATH_ROUTES = ["/privacy-policy", "/delete-account", "/delete-data"];
+
 function currentHash(): string {
   const h = window.location.hash.replace(/^#/, "");
-  return h === "" ? "/" : h;
+  if (h !== "") return h;
+  const p = window.location.pathname.replace(/\/+$/, "");
+  return PATH_ROUTES.includes(p) ? p : "/";
 }
 
 function subscribe(onChange: () => void) {
@@ -39,6 +46,9 @@ export function useNavigate() {
 export type Route =
   | { name: "login" }
   | { name: "signup" }
+  | { name: "privacy" }
+  | { name: "delete-account" }
+  | { name: "delete-data" }
   | { name: "home" }
   | { name: "japa" }
   | { name: "japa-add" }
@@ -60,12 +70,17 @@ export type Route =
 export function parseRoute(path: string): Route {
   const parts = path.split("/").filter(Boolean);
   if (parts.length === 0) return { name: "home" };
+  if (parts[0] === "privacy-policy") return { name: "privacy" };
+  if (parts[0] === "delete-account") return { name: "delete-account" };
+  if (parts[0] === "delete-data") return { name: "delete-data" };
   const [a, b] = parts;
   switch (a) {
     case "login":
       return { name: "login" };
     case "signup":
       return { name: "signup" };
+    case "privacy-policy":
+      return { name: "privacy" };
     case "home":
       return { name: "home" };
     case "japa":

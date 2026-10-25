@@ -1,4 +1,4 @@
-package com.japa.app;
+package com.anuragkulkarni.japa;
 
 import com.getcapacitor.BridgeActivity;
 

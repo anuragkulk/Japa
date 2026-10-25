@@ -34,6 +34,8 @@ const MESSAGES: Record<string, string> = {
   email_taken: "An account with this email already exists.",
   weak_password: "Password must be at least 6 characters.",
   invalid_input: "Please check the highlighted fields and try again.",
+  email_mismatch: "That email does not match the signed-in account.",
+  confirmation_required: "Please confirm the deletion before continuing.",
   duplicate_day: "That person already has an entry on this date. Edit that entry instead.",
   not_found: "That item no longer exists.",
   access_denied: "You do not have access to that item.",
@@ -290,6 +292,39 @@ export async function apiUpdateTextDevotional(id: string, title: string, body: s
 }
 export async function apiDeleteDevotional(id: string) {
   return call<{ ok: true }>({ action: "devotionals", method: "DELETE", query: { id } });
+}
+
+export type DeletionCounts = {
+  people: number;
+  japaRecords: number;
+  milestones: number;
+  devotionals: number;
+  images: number;
+  texts: number;
+};
+
+export type DeletionResult = {
+  status: "deleted" | "pending_files" | "failed";
+  account: "retained" | "deleted";
+  deleted: DeletionCounts;
+  failedTables: string[];
+  failedFiles: number;
+};
+
+export async function apiDeleteData(email: string, password: string) {
+  return call<DeletionResult>({
+    action: "delete_data",
+    method: "POST",
+    body: { email, password, confirm: true },
+  });
+}
+
+export async function apiDeleteAccount(email: string, password: string) {
+  return call<DeletionResult>({
+    action: "delete_account",
+    method: "POST",
+    body: { email, password, confirm: true },
+  });
 }
 export async function apiImageIntent(devotionalId: string, contentType: string, size: number) {
   return call<{ intent: UploadIntent }>({

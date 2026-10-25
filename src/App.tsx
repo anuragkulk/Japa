@@ -15,6 +15,8 @@ import { AddDevotional } from "@/screens/AddDevotional";
 import { AddDevotionalChoice } from "@/screens/AddDevotionalChoice";
 import { TypeDevotional } from "@/screens/TypeDevotional";
 import { DevotionalViewer } from "@/screens/DevotionalViewer";
+import { PrivacyPolicy } from "@/screens/PrivacyPolicy";
+import { DeleteAccountPage, DeleteDataPage } from "@/screens/Deletion";
 
 function Splash() {
   return (
@@ -27,6 +29,8 @@ function Splash() {
   );
 }
 
+const PUBLIC_ROUTES = new Set(["privacy", "delete-account", "delete-data"]);
+
 function Routes() {
   const { status } = useAuth();
   const path = usePath();
@@ -37,9 +41,14 @@ function Routes() {
   useEffect(() => {
     if (status === "loading") return;
     const authRoute = route.name === "login" || route.name === "signup";
+    if (PUBLIC_ROUTES.has(route.name)) return;
     if (status === "guest" && !authRoute) navigate("/login", true);
     else if (status === "authed" && (authRoute || route.name === "notfound")) navigate("/home", true);
   }, [status, route.name]);
+
+  if (route.name === "privacy") return <PrivacyPolicy />;
+  if (route.name === "delete-account") return <DeleteAccountPage />;
+  if (route.name === "delete-data") return <DeleteDataPage />;
 
   if (status === "loading") return <Splash />;
 

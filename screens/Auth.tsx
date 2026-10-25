@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Flower2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/shell";
 import { Field, TextInput } from "@/components/Field";
 import { useAuth } from "@/lib/auth";
 import { navigate } from "@/lib/router";
@@ -33,6 +34,7 @@ function AuthShell({
       </div>
 
       <div className="mt-5 text-center text-sm text-muted-foreground">{footer}</div>
+      <SiteFooter />
     </div>
   );
 }

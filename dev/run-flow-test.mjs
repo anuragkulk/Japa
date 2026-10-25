@@ -369,6 +369,90 @@ async function main() {
   const gDel = await call("devotional", { token: tokenA2, query: { id: hiT.id } });
   eq("deleted typed devotional 404", gDel.status, 404);
 
+  console.log("\n== Phase 9: account + data deletion (verified ownership, real deletes) ==");
+  r = await call("signup", { method: "POST", body: { name: "Eli", email: "eli@example.com", password: "delete108" } });
+  eq("signup E status 200", r.status, 200);
+  const tokenE = r.data?.token;
+  const personE = (await call("people", { token: tokenE })).data?.items?.[0]?.id;
+  ok("E has default You person", typeof personE === "string");
+  await call("people", { method: "POST", token: tokenE, body: { name: "Extra" } });
+  await call("japa", { method: "POST", token: tokenE, body: { personId: personE, date: today, japaCount: 27 } });
+  await call("milestones", { method: "POST", token: tokenE, body: { name: "E Goal", targetCount: 1000 } });
+  await call("devotionals", { method: "POST", token: tokenE, body: { title: "E Text", kind: "text", language: "ta", body: "ஓம் நமசிவாய" } });
+  const bE = pngBytes(3072);
+  r = await call("devotionals", { method: "POST", token: tokenE, body: { title: "E Images" } });
+  const devImgE = r.data?.devotional?.id;
+  r = await call("image_intent", { method: "POST", token: tokenE, body: { devotionalId: devImgE, contentType: PNG, size: bE.length } });
+  const pathE = r.data?.intent?.objectPath;
+  simulateUpload(pathE, bE, PNG);
+  await call("image_confirm", { method: "POST", token: tokenE, body: { devotionalId: devImgE, objectPath: pathE, size: bE.length, contentType: PNG } });
+  ok("E image stored before deletion", fake.getObject(pathE) !== null);
+
+  // Refusals: no confirmation, wrong password, wrong email.
+  r = await call("delete_data", { method: "POST", token: tokenE, body: { email: "eli@example.com", password: "delete108", confirm: false } });
+  eq("deletion without confirm rejected", r.data?.error, "confirmation_required");
+  r = await call("delete_data", { method: "POST", token: tokenE, body: { email: "eli@example.com", password: "nope123", confirm: true } });
+  eq("deletion with wrong password rejected", r.data?.error, "invalid_credentials");
+  r = await call("delete_data", { method: "POST", token: tokenE, body: { email: "someone.else@example.com", password: "delete108", confirm: true } });
+  eq("deletion with foreign email rejected (403)", r.status, 403);
+  eq("deletion with foreign email code", r.data?.error, "email_mismatch");
+  r = await call("delete_data", {});
+  eq("deletion without session 401", r.status, 401);
+  r = await call("delete_data", { method: "GET", token: tokenE });
+  eq("deletion requires POST", r.status, 405);
+
+  // Data deletion keeps the account.
+  r = await call("delete_data", { method: "POST", token: tokenE, body: { email: "eli@example.com", password: "delete108", confirm: true } });
+  eq("delete_data status 200", r.status, 200);
+  eq("delete_data reports deleted", r.data?.status, "deleted");
+  eq("delete_data keeps account", r.data?.account, "retained");
+  eq("delete_data deleted 2 people", r.data?.deleted?.people, 2);
+  eq("delete_data deleted 1 japa record", r.data?.deleted?.japaRecords, 1);
+  eq("delete_data deleted 1 milestone", r.data?.deleted?.milestones, 1);
+  eq("delete_data deleted 2 devotionals", r.data?.deleted?.devotionals, 2);
+  eq("delete_data deleted 1 image row", r.data?.deleted?.images, 1);
+  eq("delete_data deleted 1 text row", r.data?.deleted?.texts, 1);
+  eq("delete_data no failed tables", (r.data?.failedTables ?? []).length, 0);
+  eq("delete_data no failed files", r.data?.failedFiles, 0);
+  ok("deleted image file removed from storage", fake.getObject(pathE) === null);
+  r = await call("japa", { token: tokenE });
+  eq("E japa records gone", r.data?.items?.length, 0);
+  r = await call("devotionals", { token: tokenE });
+  eq("E devotionals gone", r.data?.items?.length, 0);
+  r = await call("milestones", { token: tokenE });
+  eq("E milestones gone", r.data?.items?.length, 0);
+  eq("E totalJapa now 0", r.data?.totalJapa, 0);
+  r = await call("me", { token: tokenE });
+  eq("E still signed in after data deletion", r.status, 200);
+  eq("E email retained", r.data?.user?.email, "eli@example.com");
+  r = await call("people", { token: tokenE });
+  eq("E people cleared (You recreated lazily)", r.data?.items?.length, 1);
+  eq("recreated person is the default You", r.data?.items?.[0]?.name, "You");
+
+  // Account deletion removes everything and signs the account out.
+  await call("japa", { method: "POST", token: tokenE, body: { personId: r.data?.items?.[0]?.id, date: today, japaCount: 5 } });
+  r = await call("signup", { method: "POST", body: { name: "Fina", email: "fina@example.com", password: "watch108" } });
+  const tokenF = r.data?.token;
+  await call("people", { method: "POST", token: tokenF, body: { name: "Fina Kid" } });
+  const personF = (await call("people", { token: tokenF })).data?.items?.find((p) => p.name === "Fina Kid")?.id;
+  await call("japa", { method: "POST", token: tokenF, body: { personId: personF, date: today, japaCount: 12 } });
+
+  r = await call("delete_account", { method: "POST", token: tokenE, body: { email: "eli@example.com", password: "delete108", confirm: true } });
+  eq("delete_account status 200", r.status, 200);
+  eq("delete_account reports deleted", r.data?.status, "deleted");
+  eq("delete_account account deleted", r.data?.account, "deleted");
+  eq("delete_account removed the new japa row", r.data?.deleted?.japaRecords, 1);
+  r = await call("me", { token: tokenE });
+  eq("E session invalid after account deletion", r.status, 401);
+  r = await call("login", { method: "POST", body: { email: "eli@example.com", password: "delete108" } });
+  eq("E cannot log in after account deletion", r.data?.error, "invalid_credentials");
+  r = await call("people", { token: tokenF });
+  eq("F untouched by E account deletion", r.data?.items?.length, 2);
+  r = await call("japa", { token: tokenF });
+  eq("F japa untouched", r.data?.items?.[0]?.japaCount, 12);
+  r = await call("me", { token: tokenA2 });
+  eq("A session still valid", r.status, 200);
+
   console.log("\n== Fixtures contain no seeded/sample data before writes ==");
   // (tables were created only by the flow above; nothing pre-seeded)
 
